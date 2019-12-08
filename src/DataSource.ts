@@ -19,7 +19,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     this.BackendService = getBackendService();
 
     this.Url = instanceSettings.url;
-    this.ApiKey = '097562597c29a2d7483ad8bd799f9214804ed4c6';
+    this.ApiKey = '';
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
