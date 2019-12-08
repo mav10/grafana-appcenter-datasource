@@ -1,27 +1,39 @@
 import defaults from 'lodash/defaults';
 
 import React, { PureComponent, ChangeEvent } from 'react';
-import { FormField } from '@grafana/ui';
-import { QueryEditorProps } from '@grafana/data';
+import { FormField, Select } from '@grafana/ui';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './DataSource';
-import { MyQuery, DataSourceOptions, defaultQuery, MobileApplication } from './types';
+import { MyQuery, DataSourceOptions, defaultQuery, MobileApplication, FieldType } from './types';
 
 type Props = QueryEditorProps<DataSource, MyQuery, DataSourceOptions>;
 
 interface State {
-  apps: string[];
+  apps: Array<SelectableValue<string>>;
 }
 
 export class QueryEditor extends PureComponent<Props, State> {
+  state = {
+    apps: [],
+  };
+
   async onComponentDidMount() {
     const appsFromDS = await this.props.datasource.getAppList();
-    const items: string[] = appsFromDS.map((app: MobileApplication) => app.name);
+    const items: Array<SelectableValue<string>> = appsFromDS.map((app: MobileApplication) => ({ value: app.name, key: app.id }));
+    console.log(items, appsFromDS);
     this.setState({ apps: items });
   }
 
-  onAppChange = (event: ChangeEvent<HTMLInputElement>) => {
+  async getOptions() {
+    const appsFromDS = await this.props.datasource.getAppList();
+    const item: SelectableValue<string> = appsFromDS.map((app: MobileApplication) => app.name);
+    console.log(item, appsFromDS);
+    return item;
+  }
+
+  onAppChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, application: event.target.value || 'ios' });
+    onChange({ ...query, application: event.value || 'ios' });
   };
 
   onMetricChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -30,21 +42,37 @@ export class QueryEditor extends PureComponent<Props, State> {
     onRunQuery(); // executes the query
   };
 
-  onFieldChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onFieldChange = (event: SelectableValue<FieldType>) => {
     const { onChange, query, onRunQuery } = this.props;
-    onChange({ ...query, filedValue: 'status' });
+    onChange({ ...query, filedValue: event.value || 'status' });
     onRunQuery(); // executes the query
   };
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    console.log('query in query:', query);
-    const { application, metric, filedValue } = query;
+    console.log('query in query:', this);
+    const { metric } = query;
+
     return (
       <div className="gf-form">
-        <FormField labelWidth={8} value={application || 'ios'} onChange={this.onAppChange} label="Application" type={'select'} />
+        <Select
+          width={8}
+          options={[
+            { value: 'ios', label: 'iOS' },
+            { value: 'android', label: 'Android' },
+          ]}
+          onChange={this.onAppChange}
+        />
         <FormField labelWidth={8} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
-        <FormField width={6} value={filedValue || 'status'} onChange={this.onFieldChange} label="Metric value" type="text" />
+        <Select
+          width={8}
+          options={[
+            { value: 'id', label: 'ID' },
+            { value: 'status', label: 'Status' },
+            { value: 'version', label: 'Version' },
+          ]}
+          onChange={this.onFieldChange}
+        />
       </div>
     );
   }

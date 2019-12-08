@@ -29,12 +29,12 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
 
     const data = options.targets.map(target => {
       const query = defaults(target, defaultQuery);
-      console.log('quryDef', query);
+      console.log('quryDef', query, target);
       return new MutableDataFrame({
         refId: query.refId,
         fields: [
           { name: 'Time', values: [from, to], type: FieldType.time },
-          { name: 'Value', values: [query.application, query.application], type: FieldType.string },
+          { name: 'Value', values: [query.application, query.filedValue], type: FieldType.string },
         ],
       });
     });
@@ -66,7 +66,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
       url: url,
       method: 'GET',
       headers: {
-        'X-APi-Token': this.ApiKey,
+        'X-API-Token': this.ApiKey,
       },
     };
 
