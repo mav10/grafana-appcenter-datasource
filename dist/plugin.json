@@ -1,0 +1,32 @@
+{
+  "type": "datasource",
+  "name": "AppCenter Data Source",
+  "id": "mav10-appcenter-datasource",
+  "metrics": true,
+  "backend": true,
+  "executable": "appcenter-data-source",
+
+  "info": {
+    "description": "MS AppCenter  Data Source for Grafana",
+    "author": {
+      "name": "Vasin Maxim"
+    },
+    "keywords": ["grafana", "plugin", "datasource", "appcenter", "microsoft"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      { "name": "Website", "url": "https://github.com/mav10/grafana-appcenter-datasource" },
+      { "name": "License", "url": "https://github.com/mav10/grafana-appcenter-datasource/blob/master/LICENSE" }
+    ],
+    "screenshots": [],
+    "version": "1.0.0",
+    "updated": "2019-12-08"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "6.5.x",
+    "plugins": []
+  }
+}
