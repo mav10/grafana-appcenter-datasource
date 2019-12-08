@@ -1,0 +1,10 @@
+
+# nodeJS
+node_modules
+
+# web storm
+.idea
+
+# vs code
+
+.vscode
