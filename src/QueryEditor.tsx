@@ -1,48 +1,59 @@
 import defaults from 'lodash/defaults';
 
-import React, { PureComponent, ChangeEvent } from 'react';
+import React, { ChangeEvent, PureComponent } from 'react';
 import { FormField, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './DataSource';
-import { MyQuery, DataSourceOptions, defaultQuery, MobileApplication, FieldType } from './types';
+import {
+  BuildFieldOptions,
+  BuildFieldType,
+  DataSourceOptions,
+  defaultQuery,
+  MobileApplication,
+  MyQuery,
+  TestFieldOptions,
+  TestFieldType,
+} from './types';
 
 type Props = QueryEditorProps<DataSource, MyQuery, DataSourceOptions>;
 
 interface State {
-  apps: Array<SelectableValue<string>>;
+  apps: Array<SelectableValue<MobileApplication>>;
+  measureLayer: 'app' | 'test';
 }
 
 export class QueryEditor extends PureComponent<Props, State> {
-  state = {
-    apps: [],
-  };
+  constructor(props: Props) {
+    super(props);
 
-  async onComponentDidMount() {
-    const appsFromDS = await this.props.datasource.getAppList();
-    const items: Array<SelectableValue<string>> = appsFromDS.map((app: MobileApplication) => ({ value: app.name, key: app.id }));
-    console.log(items, appsFromDS);
-    this.setState({ apps: items });
+    this.state = {
+      apps: [],
+      measureLayer: 'app',
+    };
   }
 
-  async getOptions() {
+  async componentDidMount() {
     const appsFromDS = await this.props.datasource.getAppList();
-    const item: SelectableValue<string> = appsFromDS.map((app: MobileApplication) => app.name);
-    console.log(item, appsFromDS);
-    return item;
+    const appList: Array<SelectableValue<MobileApplication>> = appsFromDS.map((app: MobileApplication) => ({
+      value: { ...app },
+      label: app.internalName,
+    }));
+    this.setState({ apps: appList });
   }
 
-  onAppChange = (event: SelectableValue<string>) => {
+  onAppChange = (event: SelectableValue<MobileApplication>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, application: event.value || 'ios' });
+    const { value } = event;
+    onChange({ ...query, application: value });
   };
 
   onMetricChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, metric: 'build' });
-    onRunQuery(); // executes the query
+    // onRunQuery(); // executes the query
   };
 
-  onFieldChange = (event: SelectableValue<FieldType>) => {
+  onFieldChange = (event: SelectableValue<BuildFieldType | TestFieldType>) => {
     const { onChange, query, onRunQuery } = this.props;
     onChange({ ...query, filedValue: event.value || 'status' });
     onRunQuery(); // executes the query
@@ -50,29 +61,17 @@ export class QueryEditor extends PureComponent<Props, State> {
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    console.log('query in query:', this);
     const { metric } = query;
+    const { apps, measureLayer } = this.state;
+
+    const appsOptions = apps.length > 0 ? apps : undefined;
+    const fieldOptions = measureLayer === 'app' ? BuildFieldOptions : TestFieldOptions;
 
     return (
       <div className="gf-form">
-        <Select
-          width={8}
-          options={[
-            { value: 'ios', label: 'iOS' },
-            { value: 'android', label: 'Android' },
-          ]}
-          onChange={this.onAppChange}
-        />
-        <FormField labelWidth={8} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
-        <Select
-          width={8}
-          options={[
-            { value: 'id', label: 'ID' },
-            { value: 'status', label: 'Status' },
-            { value: 'version', label: 'Version' },
-          ]}
-          onChange={this.onFieldChange}
-        />
+        <Select width={16} options={appsOptions} onChange={this.onAppChange} />
+        <FormField labelWidth={5} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
+        <Select width={16} options={fieldOptions} onChange={this.onFieldChange} />
       </div>
     );
   }

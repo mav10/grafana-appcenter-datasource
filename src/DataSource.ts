@@ -51,13 +51,26 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     };
   }
 
+  async getBuilds(): Promise<any> {
+    const url = `${this.Url}/v0.1/apps`;
+    const response = await this.doRequest(url);
+
+    return response.map((rawBuild: any) => ({
+      id: rawBuild.id,
+      internalName: rawBuild.name,
+      displayName: rawBuild.display_name,
+      owner: rawBuild.owner.name,
+    }));
+  }
+
   async getAppList(): Promise<MobileApplication[]> {
     const url = `${this.Url}/v0.1/apps`;
     const response = await this.doRequest(url);
 
     return response.map((rawApp: any) => ({
       id: rawApp.id,
-      name: rawApp.name,
+      internalName: rawApp.name,
+      displayName: rawApp.display_name,
     }));
   }
 
@@ -69,6 +82,8 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
         'X-API-Token': this.ApiKey,
       },
     };
+
+    console.log(this.BackendService);
 
     const response = await this.BackendService.datasourceRequest(options);
     return response.data;

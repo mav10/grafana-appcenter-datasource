@@ -1,13 +1,13 @@
 import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
-  application: string;
+  application?: MobileApplication;
+  owner: string;
   metric: MetricType;
-  filedValue: FieldType;
+  filedValue: BuildFieldType | TestFieldType;
 }
 
 export const defaultQuery: Partial<MyQuery> = {
-  application: 'ios',
   metric: 'build',
   filedValue: 'status',
 };
@@ -27,11 +27,44 @@ export interface MySecureJsonData {
 }
 
 export type MetricType = 'build' | 'testRun';
-export type FieldType = 'id' | 'lastTime' | 'status' | 'name' | 'version';
+
+export type BuildFieldType = 'id' | 'lastTime' | 'status' | 'name' | 'version';
+/**
+ * sShould contain all @see { BuildFieldType } types
+ */
+export const BuildFieldOptions = [
+  { value: 'id' as BuildFieldType, label: 'ID' },
+  { value: 'status' as BuildFieldType, label: 'Status' },
+  { value: 'version' as BuildFieldType, label: 'Version' },
+  { value: 'lastTime' as BuildFieldType, label: 'Last Time' },
+  { value: 'name' as BuildFieldType, label: 'Application Name' },
+];
+
+export type TestFieldType = 'id' | 'lastTime' | 'status' | 'name' | 'image';
+/**
+ * sShould contain all @see { BuildFieldType } types
+ */
+export const TestFieldOptions = [
+  { value: 'id' as TestFieldType, label: 'ID' },
+  { value: 'lastTime' as TestFieldType, label: 'Execution time' },
+  { value: 'status' as TestFieldType, label: 'Status' },
+  { value: 'image' as TestFieldType, label: 'Screenshot' },
+  { value: 'name' as TestFieldType, label: 'Test run Name' },
+];
 
 export interface MobileApplication {
   id: string;
-  name: string;
+  internalName: string;
+  displayName: string;
+  owner: string;
+}
+
+export interface BuildInfo {
+  id: string;
+  version: string;
+  status: string;
+  date: string;
+  branch: string;
 }
 
 export interface RequestOptions {
