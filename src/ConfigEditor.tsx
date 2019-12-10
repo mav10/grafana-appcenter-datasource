@@ -13,11 +13,14 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, url: event.target.value });
   };
 
-  // Secure field (only sent to th ebackend)
+  // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
+      jsonData: {
+        key: event.target.value,
+      },
       secureJsonData: {
         apiKey: event.target.value,
       },
@@ -28,6 +31,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
+      jsonData: {
+        key: '',
+      },
       secureJsonFields: {
         ...options.secureJsonFields,
         apiKey: false,

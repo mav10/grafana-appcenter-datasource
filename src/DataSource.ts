@@ -29,7 +29,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     this.BackendService = getBackendService();
 
     this.Url = instanceSettings.url;
-    this.ApiKey = '';
+    this.ApiKey = instanceSettings.jsonData.key;
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
@@ -44,9 +44,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
         const appInfo: BuildInfo | undefined = await this.getLatestBuilds(target.application, target.owner, target.branch);
         const targetField = query.filedValue as BuildFieldType;
 
-        console.log('bool app info:', appInfo === undefined);
         if (appInfo) {
-          console.log('appInfo', appInfo);
           return new MutableDataFrame({
             refId: query.refId,
             fields: [{ name: targetField, values: [appInfo[targetField]], type: FieldType.string }],
@@ -64,9 +62,6 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     });
 
     const data = await Promise.all(asyncData);
-
-    console.log('data', data);
-
     return { data };
   }
 
