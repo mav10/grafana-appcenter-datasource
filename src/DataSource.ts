@@ -47,7 +47,9 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
         if (appInfo) {
           return new MutableDataFrame({
             refId: query.refId,
-            fields: [{ name: targetField, values: [appInfo[targetField]], type: FieldType.string }],
+            length: 1,
+            name: target.application + targetField,
+            fields: [{ name: target.application + targetField, values: [appInfo[targetField]], type: FieldType.string }],
           });
         }
         return;
@@ -127,6 +129,8 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
   mapStatusToBuildStates(status: string, result: string) {
     if (status !== 'completed') {
       return status === 'inProgress' ? BuildStates.PENDING : BuildStates.QUEUED;
+    } else if (result !== null && result === 'succeeded') {
+      return BuildStates.SUCCESS;
     } else {
       return BuildStates.FAILED;
     }
