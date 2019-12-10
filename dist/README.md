@@ -1,0 +1,1 @@
+grafana-appcenter-datasource
