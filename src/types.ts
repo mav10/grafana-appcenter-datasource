@@ -1,15 +1,17 @@
 import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
-  application?: MobileApplication;
+  application: string;
   owner: string;
   metric: MetricType;
   filedValue: BuildFieldType | TestFieldType;
+  branch: string;
 }
 
 export const defaultQuery: Partial<MyQuery> = {
   metric: 'build',
   filedValue: 'status',
+  branch: 'master',
 };
 
 /**
@@ -28,7 +30,7 @@ export interface MySecureJsonData {
 
 export type MetricType = 'build' | 'testRun';
 
-export type BuildFieldType = 'id' | 'lastTime' | 'status' | 'name' | 'version';
+export type BuildFieldType = 'id' | 'date' | 'status' | 'version';
 /**
  * sShould contain all @see { BuildFieldType } types
  */
@@ -36,17 +38,17 @@ export const BuildFieldOptions = [
   { value: 'id' as BuildFieldType, label: 'ID' },
   { value: 'status' as BuildFieldType, label: 'Status' },
   { value: 'version' as BuildFieldType, label: 'Version' },
-  { value: 'lastTime' as BuildFieldType, label: 'Last Time' },
+  { value: 'date' as BuildFieldType, label: 'Last Time' },
   { value: 'name' as BuildFieldType, label: 'Application Name' },
 ];
 
-export type TestFieldType = 'id' | 'lastTime' | 'status' | 'name' | 'image';
+export type TestFieldType = 'id' | 'date' | 'status' | 'image';
 /**
  * sShould contain all @see { BuildFieldType } types
  */
 export const TestFieldOptions = [
   { value: 'id' as TestFieldType, label: 'ID' },
-  { value: 'lastTime' as TestFieldType, label: 'Execution time' },
+  { value: 'date' as TestFieldType, label: 'Execution time' },
   { value: 'status' as TestFieldType, label: 'Status' },
   { value: 'image' as TestFieldType, label: 'Screenshot' },
   { value: 'name' as TestFieldType, label: 'Test run Name' },
@@ -59,12 +61,29 @@ export interface MobileApplication {
   owner: string;
 }
 
+export interface BranchWithBuild {
+  branch: string;
+  buildInfo: RawBuildInfo;
+}
+
+export interface RawBuildInfo {
+  buildNumber: string;
+  finishTime: string;
+  id: number;
+  lastChangedDate: string;
+  queueTime: string;
+  reason: string;
+  result: string | 'succeeded';
+  sourceBranch: string;
+  startTime: string;
+  status: string | 'completed' | 'inProgress';
+}
+
 export interface BuildInfo {
-  id: string;
+  id: number;
   version: string;
   status: string;
   date: string;
-  branch: string;
 }
 
 export interface RequestOptions {
@@ -76,3 +95,12 @@ export interface RequestOptions {
 interface Headers {
   [name: string]: string;
 }
+
+export const BuildStates: any = {
+  SUCCESS: 100,
+  PENDING_AND_SUCCESS: 65,
+  PENDING: 50,
+  PENDING_AND_FAILED: 35,
+  QUEUED: 25,
+  FAILED: 0,
+};

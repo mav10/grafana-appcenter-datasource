@@ -36,21 +36,30 @@ export class QueryEditor extends PureComponent<Props, State> {
     const appsFromDS = await this.props.datasource.getAppList();
     const appList: Array<SelectableValue<MobileApplication>> = appsFromDS.map((app: MobileApplication) => ({
       value: { ...app },
-      label: app.internalName,
+      label: app.displayName,
     }));
     this.setState({ apps: appList });
   }
 
   onAppChange = (event: SelectableValue<MobileApplication>) => {
     const { onChange, query } = this.props;
-    const { value } = event;
-    onChange({ ...query, application: value });
+    const application = event.value;
+
+    if (application) {
+      onChange({ ...query, application: application.internalName, owner: application.owner });
+    } else {
+      throw new Error('Application is not chosen! Please select target app from the first column of query.');
+    }
   };
 
   onMetricChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, metric: 'build' });
-    // onRunQuery(); // executes the query
+  };
+
+  onBranchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, branch: event.target.value });
   };
 
   onFieldChange = (event: SelectableValue<BuildFieldType | TestFieldType>) => {
@@ -61,17 +70,37 @@ export class QueryEditor extends PureComponent<Props, State> {
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    const { metric } = query;
+    const { metric, branch, application, owner, filedValue } = query;
     const { apps, measureLayer } = this.state;
 
-    const appsOptions = apps.length > 0 ? apps : undefined;
+    const appsOptions = apps.length > 0 ? apps : [{ value: undefined, label: 'Select App' }];
     const fieldOptions = measureLayer === 'app' ? BuildFieldOptions : TestFieldOptions;
 
     return (
       <div className="gf-form">
-        <Select width={16} options={appsOptions} onChange={this.onAppChange} />
-        <FormField labelWidth={5} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
-        <Select width={16} options={fieldOptions} onChange={this.onFieldChange} />
+        <Select
+          width={16}
+          value={{
+            value: {
+              displayName: application,
+              internalName: application,
+              owner: owner,
+            } as MobileApplication,
+            label: application,
+          }}
+          options={appsOptions}
+          onChange={this.onAppChange}
+        />
+        <FormField
+          label={'Target Branch'}
+          type={'text'}
+          onChange={this.onBranchChange}
+          value={branch || 'master'}
+          labelWidth={5}
+          tooltip="Enter target branch"
+        />
+        <FormField labelWidth={6} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
+        <Select width={16} value={{ value: filedValue, label: filedValue }} options={fieldOptions} onChange={this.onFieldChange} />
       </div>
     );
   }

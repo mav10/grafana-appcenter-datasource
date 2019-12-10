@@ -1,8 +1,18 @@
 import defaults from 'lodash/defaults';
 
-import { DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, MutableDataFrame, FieldType } from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, MutableDataFrame } from '@grafana/data';
 import { BackendSrv as BackendService, getBackendSrv as getBackendService } from '@grafana/runtime';
-import { MyQuery, DataSourceOptions, defaultQuery, RequestOptions, MobileApplication } from './types';
+import {
+  BranchWithBuild,
+  BuildFieldType,
+  BuildInfo,
+  BuildStates,
+  DataSourceOptions,
+  defaultQuery,
+  MobileApplication,
+  MyQuery,
+  RequestOptions,
+} from './types';
 
 export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
   private Url: string;
@@ -23,21 +33,39 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
-    const { range } = options;
-    const from = range.from.valueOf();
-    const to = range.to.valueOf();
+    const asyncData = options.targets.map(async target => {
+      if (!target.application) {
+        console.warn('Application is not chosen! Will not fetch data');
+        return;
+      }
 
-    const data = options.targets.map(target => {
-      const query = defaults(target, defaultQuery);
-      console.log('quryDef', query, target);
-      return new MutableDataFrame({
-        refId: query.refId,
-        fields: [
-          { name: 'Time', values: [from, to], type: FieldType.time },
-          { name: 'Value', values: [query.application, query.filedValue], type: FieldType.string },
-        ],
-      });
+      if (target.metric === 'build') {
+        const query = defaults(target, defaultQuery);
+        const appInfo: BuildInfo | undefined = await this.getLatestBuilds(target.application, target.owner, target.branch);
+        const targetField = query.filedValue as BuildFieldType;
+
+        console.log('bool app info:', appInfo === undefined);
+        if (appInfo) {
+          console.log('appInfo', appInfo);
+          return new MutableDataFrame({
+            refId: query.refId,
+            fields: [{ name: targetField, values: [appInfo[targetField]], type: FieldType.string }],
+          });
+        }
+        return;
+      }
+
+      if (target.metric === 'testRun') {
+        console.warn('Sorry but testRun target currently unsupported');
+        return;
+      }
+
+      return;
     });
+
+    const data = await Promise.all(asyncData);
+
+    console.log('data', data);
 
     return { data };
   }
@@ -51,16 +79,29 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     };
   }
 
-  async getBuilds(): Promise<any> {
-    const url = `${this.Url}/v0.1/apps`;
+  async getLatestBuilds(appName: string, owner: string, branch: string): Promise<BuildInfo | undefined> {
+    const url = `${this.Url}/v0.1/apps/${owner}/${appName}/branches`;
     const response = await this.doRequest(url);
 
-    return response.map((rawBuild: any) => ({
-      id: rawBuild.id,
-      internalName: rawBuild.name,
-      displayName: rawBuild.display_name,
-      owner: rawBuild.owner.name,
-    }));
+    const branchesWithBuilds: BranchWithBuild[] = response.map((rawBuild: any) => {
+      return {
+        branch: rawBuild.branch.name,
+        buildInfo: rawBuild.lastBuild,
+      };
+    });
+
+    const targetRawBuild = branchesWithBuilds.find(x => x.branch === branch);
+
+    if (targetRawBuild && targetRawBuild.buildInfo) {
+      const info = targetRawBuild.buildInfo;
+      return {
+        id: info.id,
+        version: info.buildNumber,
+        status: this.mapStatusToBuildStates(info.status, info.result),
+        date: info.finishTime,
+      };
+    }
+    return undefined;
   }
 
   async getAppList(): Promise<MobileApplication[]> {
@@ -71,6 +112,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
       id: rawApp.id,
       internalName: rawApp.name,
       displayName: rawApp.display_name,
+      owner: rawApp.owner.name,
     }));
   }
 
@@ -83,9 +125,15 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
       },
     };
 
-    console.log(this.BackendService);
-
     const response = await this.BackendService.datasourceRequest(options);
     return response.data;
+  }
+
+  mapStatusToBuildStates(status: string, result: string) {
+    if (status !== 'completed') {
+      return status === 'inProgress' ? BuildStates.PENDING : BuildStates.QUEUED;
+    } else {
+      return BuildStates.FAILED;
+    }
   }
 }
