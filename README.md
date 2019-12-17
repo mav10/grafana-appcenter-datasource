@@ -4,7 +4,7 @@ ___
 #How to install plugin
 1. Clone this repo
 2. Navigate to repo's folder
-3. Run 'Grafana' container (how to do it see docs ->[https://grafana.com/docs/grafana/latest/installation])
+3. Run 'Grafana' container (how to do it [see docs](https://grafana.com/docs/grafana/latest/installation/docker/ "Grafana Docker installation"))
 4. create folder for plugin in Grafana's container
 
     `sudo docker exec -it GRAFANA bash`
