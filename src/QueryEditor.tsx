@@ -9,6 +9,7 @@ import {
   BuildFieldType,
   DataSourceOptions,
   defaultQuery,
+  MetricType,
   MobileApplication,
   MyQuery,
   TestFieldOptions,
@@ -19,7 +20,6 @@ type Props = QueryEditorProps<DataSource, MyQuery, DataSourceOptions>;
 
 interface State {
   apps: Array<SelectableValue<MobileApplication>>;
-  measureLayer: 'app' | 'test';
 }
 
 export class QueryEditor extends PureComponent<Props, State> {
@@ -28,7 +28,6 @@ export class QueryEditor extends PureComponent<Props, State> {
 
     this.state = {
       apps: [],
-      measureLayer: 'app',
     };
   }
 
@@ -46,20 +45,26 @@ export class QueryEditor extends PureComponent<Props, State> {
     const application = event.value;
 
     if (application) {
-      onChange({ ...query, application: application.internalName, owner: application.owner });
+      const platform = application.internalName.toLowerCase().includes('ios') ? 'ios' : 'android';
+      onChange({ ...query, application: application.internalName, owner: application.owner, platform: platform });
     } else {
       throw new Error('Application is not chosen! Please select target app from the first column of query.');
     }
   };
 
-  onMetricChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onMetricChange = (event: SelectableValue<MetricType>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, metric: 'build' });
+    onChange({ ...query, metric: event.value || 'build' });
   };
 
   onBranchChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, branch: event.target.value });
+  };
+
+  onTestSeriesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, testSeriesName: event.target.value });
   };
 
   onFieldChange = (event: SelectableValue<BuildFieldType | TestFieldType>) => {
@@ -70,11 +75,15 @@ export class QueryEditor extends PureComponent<Props, State> {
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    const { metric, branch, application, owner, filedValue } = query;
-    const { apps, measureLayer } = this.state;
+    const { metric, branch, application, owner, filedValue, testSeriesName } = query;
+    const { apps } = this.state;
 
     const appsOptions = apps.length > 0 ? apps : [{ value: undefined, label: 'Select App' }];
-    const fieldOptions = measureLayer === 'app' ? BuildFieldOptions : TestFieldOptions;
+    const fieldOptions = metric === 'build' ? BuildFieldOptions : TestFieldOptions;
+    const metricOptions = [
+      { value: 'build' as MetricType, label: 'Builds' },
+      { value: 'testRun' as MetricType, label: 'Test Runs' },
+    ];
 
     return (
       <div className="gf-form">
@@ -91,15 +100,32 @@ export class QueryEditor extends PureComponent<Props, State> {
           options={appsOptions}
           onChange={this.onAppChange}
         />
-        <FormField
-          label={'Target Branch'}
-          type={'text'}
-          onChange={this.onBranchChange}
-          value={branch || 'master'}
-          labelWidth={5}
-          tooltip="Enter target branch"
+
+        <Select
+          value={{ value: metric, label: metricOptions.find(x => x.value === metric)!.label }}
+          options={metricOptions}
+          onChange={this.onMetricChange}
         />
-        <FormField labelWidth={6} value={metric || 'build'} onChange={this.onMetricChange} label="Metric type" tooltip="Build or test run" />
+        {metric === 'build' && (
+          <FormField
+            label={'Target Branch'}
+            type={'text'}
+            onChange={this.onBranchChange}
+            value={branch || 'master'}
+            labelWidth={10}
+            tooltip="Enter target branch"
+          />
+        )}
+        {metric === 'testRun' && (
+          <FormField
+            label={'Target Test series'}
+            type={'text'}
+            onChange={this.onTestSeriesChange}
+            value={testSeriesName || 'launch-tests'}
+            labelWidth={10}
+            tooltip="Enter target test series"
+          />
+        )}
         <Select width={16} value={{ value: filedValue, label: filedValue }} options={fieldOptions} onChange={this.onFieldChange} />
       </div>
     );

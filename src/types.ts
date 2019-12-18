@@ -3,9 +3,11 @@ import { DataQuery, DataSourceJsonData } from '@grafana/data';
 export interface MyQuery extends DataQuery {
   application: string;
   owner: string;
+  platform: string;
   metric: MetricType;
   filedValue: BuildFieldType | TestFieldType;
   branch: string;
+  testSeriesName: string;
 }
 
 export const defaultQuery: Partial<MyQuery> = {
@@ -51,7 +53,6 @@ export const TestFieldOptions = [
   { value: 'date' as TestFieldType, label: 'Execution time' },
   { value: 'status' as TestFieldType, label: 'Status' },
   { value: 'image' as TestFieldType, label: 'Screenshot' },
-  { value: 'name' as TestFieldType, label: 'Test run Name' },
 ];
 
 export interface MobileApplication {
@@ -77,6 +78,66 @@ export interface RawBuildInfo {
   sourceBranch: string;
   startTime: string;
   status: string | 'completed' | 'inProgress';
+}
+
+export interface TestRun {
+  id: string;
+  date: string;
+  status: number;
+  image: string;
+}
+
+export interface RawTestRun {
+  id: string;
+  date: string;
+  platform: 'Android' | 'iOS';
+  status: string;
+  testSeries: string;
+  appVersion: string;
+}
+
+export interface RawTestReport {
+  id: string;
+  features: RawTestFeature[];
+}
+
+export interface RawTestFeature {
+  name: string;
+  tests: RawTestItem[];
+}
+
+export interface RawTestItem {
+  testName: string;
+  runs: RawTestRunItem[];
+}
+
+export interface RawTestRunItem {
+  number: number;
+  steps: RawTestStepItem[];
+}
+
+export interface RawTestStepItem {
+  stepName: string;
+  id: string;
+  step_report_url: string;
+}
+
+export interface ReportBody {
+  deviceScreenshots: ReportScreenshot[];
+}
+
+export interface ReportScreenshot {
+  id: string;
+  status: string;
+  screenshot: {
+    urls: Screenshot;
+  };
+}
+
+export interface Screenshot {
+  medium: string;
+  large: string;
+  original: string;
 }
 
 export interface BuildInfo {

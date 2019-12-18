@@ -11,7 +11,12 @@ import {
   defaultQuery,
   MobileApplication,
   MyQuery,
+  RawTestReport,
+  RawTestRun,
+  ReportBody,
   RequestOptions,
+  TestFieldType,
+  TestRun,
 } from './types';
 
 export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
@@ -56,7 +61,35 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
       }
 
       if (target.metric === 'testRun') {
-        console.warn('Sorry but testRun target currently unsupported');
+        const query = defaults(target, defaultQuery);
+        const testInfo: RawTestRun | undefined = await this.getLatestTestRunByPlatform(
+          target.application,
+          target.owner,
+          target.testSeriesName,
+          target.platform
+        );
+        const targetField = query.filedValue as TestFieldType;
+
+        let screenShot = '';
+        if (targetField === 'image' && testInfo) {
+          screenShot = await this.getTestRunScreenShots(target.application, target.owner, testInfo.id);
+        }
+
+        if (testInfo) {
+          const targetObject: TestRun = {
+            id: testInfo.id,
+            status: testInfo.status === 'passed' ? 100 : 0,
+            date: testInfo.date,
+            image: screenShot,
+          };
+          return new MutableDataFrame({
+            refId: query.refId,
+            length: 1,
+            name: target.application + targetField,
+            fields: [{ name: target.application + targetField, values: [targetObject[targetField]], type: FieldType.string }],
+          });
+        }
+
         return;
       }
 
@@ -99,6 +132,51 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
       };
     }
     return undefined;
+  }
+
+  async getLatestTestRunByPlatform(appName: string, owner: string, testSeries: string, platform: string): Promise<RawTestRun | undefined> {
+    if (!(appName && owner && testSeries && platform)) {
+      throw Error('Not all params  were passed! try to re-set all field and repeat oe more time');
+    }
+
+    const url = `${this.Url}/v0.1/apps/${owner}/${appName}/test_series/${testSeries}/test_runs`;
+    const response = await this.doRequest(url);
+
+    const testRuns: RawTestRun[] = response.map((rawTestRun: RawTestRun) => rawTestRun);
+    const targetPlatformTestRuns: RawTestRun[] = testRuns
+      .filter(x => x.platform.toLowerCase() === platform)
+      .sort((prev, next) => prev.date.localeCompare(next.date));
+
+    return targetPlatformTestRuns.length > 0 ? targetPlatformTestRuns[targetPlatformTestRuns.length - 1] : undefined;
+  }
+
+  async getTestRunScreenShots(appName: string, owner: string, testId: string): Promise<any> {
+    if (!(appName && owner && testId)) {
+      throw Error('Could not get testId');
+    }
+
+    const url = `${this.Url}/v0.1/apps/${owner}/${appName}/test_runs/${testId}/report`;
+    const response: RawTestReport = await this.doRequest(url);
+
+    const reportUrls: string[] = [];
+    const lastTestFeature = response.features.findIndex(x => x.name === 'Tests');
+    response.features[lastTestFeature].tests.forEach(test =>
+      test.runs.forEach(run =>
+        run.steps.forEach(step => {
+          reportUrls.push(step.step_report_url);
+        })
+      )
+    );
+
+    const screenShotUrls: string[] = [];
+    for (let i = 0; i < reportUrls.length; i++) {
+      const body: ReportBody = await this.doRequest(reportUrls[i]);
+      if (body && body.deviceScreenshots.length > 0) {
+        screenShotUrls.push(body.deviceScreenshots[0].screenshot.urls.large);
+      }
+    }
+
+    return screenShotUrls[0];
   }
 
   async getAppList(): Promise<MobileApplication[]> {
