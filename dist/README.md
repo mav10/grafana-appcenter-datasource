@@ -30,16 +30,16 @@ ___
     
     8.1 Go to settings -> datasources
     
-    ![Configure datasource](docs/conf-ds.png)
+    ![Configure datasource](https://raw.githubusercontent.com/mav10/grafana-appcenter-datasource/master/src/img/conf-ds.png)
     
     8.2 Generate API token in Appcenter with **FULL Access** 
     
     _Account settings -> API tokens -> NEW API token_    
-    ![Configure datasource](docs/token.png)
+    ![Generate token](https://raw.githubusercontent.com/mav10/grafana-appcenter-datasource/master/src/img/token.png)
     
     8.3 Fill appcenter URl and API-token in plugin settings 
     
-    ![Configure datasource](docs/datasource.png)
+    ![Configure datasource options](https://raw.githubusercontent.com/mav10/grafana-appcenter-datasource/master/src/img/datasource.png)
     
 9. Create panel with new datasource
     
@@ -51,11 +51,11 @@ ___
     
     9.4 And select Target field (status, ID, Version, Last build time, Application Name)
     
-    ![Configure datasource](docs/query-config.png)
+    ![Configure datasource query](https://raw.githubusercontent.com/mav10/grafana-appcenter-datasource/master/src/img/query-config.png)
     
 As result you could configure something like that:
 
-![Configure datasource](docs/panel.png)
+![Panel](https://raw.githubusercontent.com/mav10/grafana-appcenter-datasource/master/src/img/panel.png)
 
 #Status metrics
 
