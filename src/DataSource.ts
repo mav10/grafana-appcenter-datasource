@@ -159,7 +159,7 @@ export class DataSource extends DataSourceApi<MyQuery, DataSourceOptions> {
     const response: RawTestReport = await this.doRequest(url);
 
     const reportUrls: string[] = [];
-    const lastTestFeature = response.features.findIndex(x => x.name === 'Tests');
+    const lastTestFeature = response.features.findIndex(x => x.name.toLowerCase().includes('test'));
     response.features[lastTestFeature].tests.forEach(test =>
       test.runs.forEach(run =>
         run.steps.forEach(step => {
