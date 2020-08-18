@@ -11,10 +11,10 @@
   "author": "Grafana Labs",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "next",
-    "@grafana/runtime": "next",
-    "@grafana/toolkit": "next",
-    "@grafana/ui": "next",
+    "@grafana/data": "6.5.0",
+    "@grafana/runtime": "6.5.0",
+    "@grafana/toolkit": "6.5.0",
+    "@grafana/ui": "6.5.0",
     "@types/lodash": "latest"
   }
 }
